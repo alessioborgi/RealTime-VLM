@@ -2,264 +2,443 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Interaction App</title>
+    <title>Real-Time VLM Captioner</title>
+    <meta name="viewport" content="width=1200">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(120deg, #e0e7ff 0%, #c7d2fe 100%);
+            font-family: 'Inter', sans-serif;
+        }
         body {
-            font-family: sans-serif;
+            display: flex;
+            flex-direction: row;
+        }
+        .side-menu {
+            min-width: 240px;
+            max-width: 300px;
+            background: #fffdfcdd;
+            border-right: 2px solid #e3e5fa;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            padding: 20px;
-            background-color: #f0f0f0;
+            align-items: flex-start;
+            padding: 35px 22px 35px 22px;
+            gap: 27px;
+            box-shadow: 3px 0 18px #e5e7fa44;
+            z-index: 10;
         }
-        .controls, .io-areas {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background-color: #fff;
-            padding: 15px;
+        .side-menu label {
+            font-size: 1.09em;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .side-menu input, .side-menu select, .side-menu button {
+            font-size: 1em;
+            padding: 7px 12px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #d2d6ef;
+            background: #f5f7ff;
+            margin-bottom: 15px;
         }
-        .io-areas {
+        .side-menu button {
+            background: #6d6ae8;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .side-menu button.active {
+            background: #1dc685;
+        }
+        .side-menu button#voiceBtn.active {
+            background: #6acc96;
+        }
+        .side-menu button#themeBtn {
+            background: #f7d359;
+            color: #2b2222;
+        }
+        .side-menu button#themeBtn.active {
+            background: #1a1a2f;
+            color: #f7d359;
+        }
+        .side-menu select, .side-menu input {
+            min-width: 120px;
+        }
+        .side-menu input[type="text"] {
+            width: 180px;
+        }
+        .side-menu .section {
+            margin-bottom: 7px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 48px;
+            padding: 60px 2vw 40px 2vw;
+            width: 100%;
+        }
+        .video-frame {
+            width: 700px;
+            height: 520px;
+            border-radius: 24px;
+            box-shadow: 0 12px 48px #c7c9f6bb;
+            border: 4px solid #b0b4e0;
+            background: #222235;
+            overflow: hidden;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        video {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 24px;
+        }
+        .transcript-panel {
+            min-width: 500px;
+            max-width: 880px;
+            background: #f7f8fecc;
+            border-radius: 26px;
+            box-shadow: 0 6px 38px #b9bbe777;
+            padding: 48px 45px 38px 45px;
+            display: flex;
             flex-direction: column;
             align-items: stretch;
+            margin-top: 10px;
+            min-height: 480px;
+            max-height: 640px;
         }
-        textarea {
-            width: 300px;
-            height: 80px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
+        .live-caption {
+            font-size: 2.0em;
+            line-height: 1.55em;
+            color: #242446;
+            min-height: 230px;
+            max-height: 540px;
+            overflow-y: auto;
+            background: #e3e8faee;
+            padding: 28px 18px;
+            border-radius: 16px;
+            box-shadow: 0 1px 6px #c7d2fa22;
+            word-break: break-word;
+            transition: background 0.25s;
+            resize: vertical;
+            outline: none;
+            letter-spacing: 0.01em;
         }
-        #videoFeed {
-            width: 480px;
-            height: 360px;
-            border: 2px solid #333;
-            background-color: #000;
-            border-radius: 8px;
+        .caption-fade {
+            background: #fff7d3cc !important;
+            transition: background 0.35s;
         }
-        #startButton {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+        .caption-typing {
+            border-right: 2px solid #4f4f70;
+            animation: blink-cursor 0.8s steps(1) infinite;
+        }
+        @keyframes blink-cursor { 50% { border-right-color: transparent; } }
+        .transcript-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 18px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .transcript-controls button {
+            background: #a88af3;
+            color: #fff;
             border: none;
-            border-radius: 4px;
-            color: white;
+            border-radius: 8px;
+            font-size: 1.09em;
+            padding: 9px 24px;
+            margin-top: 5px;
+            cursor: pointer;
         }
-        #startButton.start {
-            background-color: #28a745; /* Green */
+        .transcript-controls button:disabled {
+            background: #e0e0e0;
+            color: #b8b8b8;
+            cursor: not-allowed;
         }
-        #startButton.stop {
-            background-color: #dc3545; /* Red */
-        }
-        label {
-            font-weight: bold;
-        }
-        select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        .hidden {
-            display: none;
+        @media (max-width: 1350px) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+                gap: 26px;
+                padding: 28px 4vw;
+            }
+            .transcript-panel {
+                max-width: 97vw;
+                min-width: unset;
+                padding: 22px 10px;
+            }
+            .video-frame {
+                width: 97vw;
+                height: 48vw;
+                min-width: 270px;
+                min-height: 170px;
+            }
         }
     </style>
 </head>
 <body>
-
-    <h1>Camera Interaction App</h1>
-
-    <video id="videoFeed" autoplay playsinline></video>
-    <canvas id="canvas" class="hidden"></canvas> <!-- For capturing frames -->
-
-    <div class="io-areas">
-        <div>
-            <label for="baseURL">Base API:</label><br>
-            <input id="baseURL" name="Instruction" value="http://localhost:8080"></textarea>
+    <div class="side-menu">
+        <div class="section">
+            <label>Status:</label><br>
+            <span id="status" style="margin-bottom:8px; font-weight:600;">Ready</span>
         </div>
-        <div>
-            <label for="instructionText">Instruction:</label><br>
-            <textarea id="instructionText" style="height: 2em; width: 40em" name="Instruction"></textarea>
+        <div class="section">
+            <label for="apiURL">API Endpoint:</label><br>
+            <input id="apiURL" type="text" value="http://localhost:8080">
         </div>
-        <div>
-            <label for="responseText">Response:</label><br>
-            <textarea id="responseText" style="height: 2em; width: 40em" name="Response" readonly placeholder="Server response will appear here..."></textarea>
+        <div class="section">
+            <label for="intervalSelect">Update Interval:</label><br>
+            <select id="intervalSelect">
+                <option value="1500">1.5s</option>
+                <option value="2000" selected>2s</option>
+                <option value="4000">4s</option>
+                <option value="8000">8s</option>
+            </select>
+        </div>
+        <div class="section">
+            <label>Speech Output:</label><br>
+            <button id="voiceBtn" style="width:80px;">🔇 Off</button>
+        </div>
+        <div class="section">
+            <label>Text Size:</label><br>
+            <select id="textSize">
+                <option value="1.4em">A</option>
+                <option value="2em" selected>A+</option>
+                <option value="2.5em">A++</option>
+            </select>
+        </div>
+        <div class="section">
+            <label>Theme:</label><br>
+            <button id="themeBtn" style="width:80px;">🌗</button>
+        </div>
+        <div class="section">
+            <label>Start/Stop:</label><br>
+            <button id="startBtn" style="width:80px;">Start</button>
         </div>
     </div>
-
-    <div class="controls">
-        <label for="intervalSelect">Interval between 2 requests:</label>
-        <select id="intervalSelect" name="Interval between 2 requests">
-            <option value="100">100ms</option>
-            <option value="250">250ms</option>
-            <option value="500" selected>500ms</option>
-            <option value="1000">1s</option>
-            <option value="2000">2s</option>
-        </select>
-        <button id="startButton" class="start">Start</button>
+    <div class="main-content">
+        <div>
+            <div class="video-frame">
+                <video id="videoFeed" autoplay playsinline></video>
+            </div>
+        </div>
+        <div class="transcript-panel">
+            <div id="caption" class="live-caption" tabindex="0">Waiting for first description...</div>
+            <div class="transcript-controls">
+                <button id="pauseBtn" disabled>Pause</button>
+                <button id="resumeBtn" style="display:none;">Resume</button>
+                <button id="replayBtn" disabled>Replay</button>
+            </div>
+        </div>
     </div>
-
+    <canvas id="canvas" style="display:none;"></canvas>
     <script>
+        // ---- Elements ----
         const video = document.getElementById('videoFeed');
         const canvas = document.getElementById('canvas');
-        const baseURL = document.getElementById('baseURL');
-        const instructionText = document.getElementById('instructionText');
-        const responseText = document.getElementById('responseText');
+        const statusElem = document.getElementById('status');
+        const apiURL = document.getElementById('apiURL');
         const intervalSelect = document.getElementById('intervalSelect');
-        const startButton = document.getElementById('startButton');
+        const startBtn = document.getElementById('startBtn');
+        const captionElem = document.getElementById('caption');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const textSize = document.getElementById('textSize');
+        const themeBtn = document.getElementById('themeBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const replayBtn = document.getElementById('replayBtn');
 
-        instructionText.value = "What do you see?"; // default instruction
+        // ---- State ----
+        let stream = null, intervalId = null, running = false, ttsOn = false;
+        let transcript = "";
+        let lastVlmOutput = "";
+        let paused = false;
+        let ttsUtterance = null;
 
-        let stream;
-        let intervalId;
-        let isProcessing = false;
-
-        // Returns response text (string)
-        async function sendChatCompletionRequest(instruction, imageBase64URL) {
-            const response = await fetch(`${baseURL.value}/v1/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    max_tokens: 100,
-                    messages: [
-                        { role: 'user', content: [
-                            { type: 'text', text: instruction },
-                            { type: 'image_url', image_url: {
-                                url: imageBase64URL,
-                            } }
-                        ] },
-                    ]
-                })
-            });
-            if (!response.ok) {
-                const errorData = await response.text();
-                return `Server error: ${response.status} - ${errorData}`;
-            }
-            const data = await response.json();
-            return data.choices[0].message.content;
-        }
-
-        // 1. Ask for camera permission on load
+        // Camera
         async function initCamera() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-                responseText.value = "Camera access granted. Ready to start.";
-            } catch (err) {
-                console.error("Error accessing camera:", err);
-                responseText.value = `Error accessing camera: ${err.name} - ${err.message}. Please ensure permissions are granted and you are on HTTPS or localhost.`;
-                alert(`Error accessing camera: ${err.name}. Make sure you've granted permission and are on HTTPS or localhost.`);
+                setStatus("Camera ready");
+            } catch (e) {
+                setStatus("Camera error: " + e.message);
             }
         }
 
         function captureImage() {
-            if (!stream || !video.videoWidth) {
-                console.warn("Video stream not ready for capture.");
-                return null;
-            }
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            return canvas.toDataURL('image/jpeg', 0.8); // Use JPEG for smaller size, 0.8 quality
+            if (!stream || !video.videoWidth) return null;
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 0.8);
         }
 
-        async function sendData() {
-            if (!isProcessing) return; // Ensure we don't have overlapping requests if processing takes longer than interval
+        function setStatus(msg) {
+            statusElem.textContent = msg;
+        }
 
-            const instruction = instructionText.value;
-            const imageBase64URL = captureImage();
+        // System Prompt
+        function buildSystemPrompt(context) {
+            return (
+                "You are a real-time scene narrator for a visually impaired or deaf person. " +
+                "Continue the description as a single flowing narrative, only adding what is new or has changed. " +
+                "Do not repeat previous details or restate the scene; just continue naturally, as if telling a story. " +
+                "Here is the current story so far: \"" + context.trim() + "\". What happens now?"
+            );
+        }
 
-            if (!imageBase64URL) {
-                responseText.value = "Failed to capture image. Stream might not be active.";
-                // Optionally stop processing if image capture fails consistently
-                // handleStop();
-                return;
-            }
+        // VLM Captioning
+        async function updateCaptionNarrative() {
+            if (!running || paused) return;
+            const img = captureImage();
+            if (!img) return setStatus("Camera not ready");
 
-            const payload = {
-                instruction: instruction,
-                imageBase64URL: imageBase64URL
-            };
+            // Use transcript as context (truncate if very long)
+            let context = transcript.length > 1000 ? transcript.slice(-1000) : transcript;
+            const systemPrompt = buildSystemPrompt(context);
 
+            setStatus("Requesting...");
             try {
-                const response = await sendChatCompletionRequest(payload.instruction, payload.imageBase64URL);
-                responseText.value = response;
-            } catch (error) {
-                console.error('Error sending data:', error);
-                responseText.value = `Error: ${error.message}`;
+                const res = await fetch(`${apiURL.value}/v1/chat/completions`, {
+                    method: "POST",
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        max_tokens: 90,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: [{ type: 'image_url', image_url: { url: img } }] }
+                        ]
+                    })
+                });
+                if (!res.ok) throw new Error(res.status);
+                const data = await res.json();
+                let newText = data.choices[0].message.content.trim();
+
+                // Deduplicate: remove transcript overlap
+                if (newText.startsWith(context.trim())) {
+                    newText = newText.slice(context.trim().length).trim();
+                }
+
+                // Only append if adds new info and not repeating last
+                if (newText && (!transcript.endsWith(newText))) {
+                    transcript += (transcript ? " " : "") + newText;
+                    showTypingEffect(newText, true);
+                    replayBtn.disabled = false;
+                    lastVlmOutput = newText;
+                    if (ttsOn) speakCaption(newText);
+                }
+                setStatus("Ready");
+            } catch (err) {
+                setStatus("API error: " + err.message);
             }
         }
 
-        function handleStart() {
-            if (!stream) {
-                responseText.value = "Camera not available. Cannot start.";
-                alert("Camera not available. Please grant permission first.");
-                return;
+        // Typing animation (appending to the transcript)
+        async function showTypingEffect(newText, append=true) {
+            captionElem.classList.remove("caption-fade");
+            let existing = append ? transcript.slice(0, transcript.length - newText.length) : "";
+            captionElem.innerHTML = existing;
+            captionElem.classList.add("caption-typing");
+            let displayed = existing;
+            for (let i = 1; i <= newText.length; i++) {
+                captionElem.innerHTML = displayed + newText.slice(0, i);
+                await new Promise(res => setTimeout(res, 14 + Math.random()*18)); // adjustable speed
+                if (!running || paused) return;
             }
-            isProcessing = true;
-            startButton.textContent = "Stop";
-            startButton.classList.remove('start');
-            startButton.classList.add('stop');
-
-            instructionText.disabled = true;
-            intervalSelect.disabled = true;
-
-            responseText.value = "Processing started...";
-
-            const intervalMs = parseInt(intervalSelect.value, 10);
-            
-            // Initial immediate call
-            sendData(); 
-            
-            // Then set interval
-            intervalId = setInterval(sendData, intervalMs);
+            captionElem.classList.remove("caption-typing");
+            captionElem.classList.add("caption-fade");
+            setTimeout(() => captionElem.classList.remove("caption-fade"), 600);
         }
 
-        function handleStop() {
-            isProcessing = false;
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-            startButton.textContent = "Start";
-            startButton.classList.remove('stop');
-            startButton.classList.add('start');
-
-            instructionText.disabled = false;
-            intervalSelect.disabled = false;
-            if (responseText.value.startsWith("Processing started...")) {
-                responseText.value = "Processing stopped.";
-            }
+        // TTS
+        function speakCaption(text) {
+            if (!window.speechSynthesis) return;
+            if (ttsUtterance) window.speechSynthesis.cancel();
+            ttsUtterance = new SpeechSynthesisUtterance(text);
+            ttsUtterance.lang = "en-US";
+            ttsUtterance.rate = 1.05; ttsUtterance.pitch = 1.0;
+            window.speechSynthesis.speak(ttsUtterance);
         }
 
-        startButton.addEventListener('click', () => {
-            if (isProcessing) {
-                handleStop();
+        // Controls
+        startBtn.onclick = () => {
+            if (!running) {
+                running = true;
+                paused = false;
+                transcript = ""; // Optional: clear on new session
+                captionElem.textContent = "Waiting for first description...";
+                startBtn.textContent = "Stop";
+                pauseBtn.disabled = false;
+                intervalSelect.disabled = true;
+                updateCaptionNarrative(); // initial call
+                intervalId = setInterval(updateCaptionNarrative, parseInt(intervalSelect.value));
             } else {
-                handleStart();
+                running = false;
+                paused = false;
+                startBtn.textContent = "Start";
+                pauseBtn.disabled = true;
+                resumeBtn.style.display = "none";
+                intervalSelect.disabled = false;
+                captionElem.classList.remove("caption-typing");
+                setStatus("Stopped");
+                if (intervalId) clearInterval(intervalId);
             }
+        };
+        pauseBtn.onclick = () => {
+            paused = true;
+            pauseBtn.disabled = true;
+            resumeBtn.style.display = "";
+            setStatus("Paused");
+            if (intervalId) clearInterval(intervalId);
+        };
+        resumeBtn.onclick = () => {
+            paused = false;
+            resumeBtn.style.display = "none";
+            pauseBtn.disabled = false;
+            setStatus("Ready");
+            updateCaptionNarrative();
+            intervalId = setInterval(updateCaptionNarrative, parseInt(intervalSelect.value));
+        };
+        replayBtn.onclick = () => {
+            if (lastVlmOutput) {
+                showTypingEffect(lastVlmOutput, false);
+                if (ttsOn) speakCaption(lastVlmOutput);
+            }
+        };
+        voiceBtn.onclick = () => {
+            ttsOn = !ttsOn;
+            voiceBtn.textContent = ttsOn ? "🔊 On" : "🔇 Off";
+            voiceBtn.classList.toggle("active", ttsOn);
+            if (!ttsOn && window.speechSynthesis) window.speechSynthesis.cancel();
+        };
+        textSize.onchange = () => {
+            captionElem.style.fontSize = textSize.value;
+        };
+        themeBtn.onclick = () => {
+            document.body.classList.toggle("dark");
+            themeBtn.classList.toggle("active");
+            // Optionally, implement dark mode theme here!
+        };
+
+        // Initialize
+        window.addEventListener("DOMContentLoaded", () => {
+            initCamera();
+            setStatus("Ready");
+            captionElem.textContent = "Waiting for first description...";
         });
-
-        // Initialize camera when the page loads
-        window.addEventListener('DOMContentLoaded', initCamera);
-
-        // Optional: Stop stream when page is closed/navigated away to release camera
-        window.addEventListener('beforeunload', () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
+        window.addEventListener("beforeunload", () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            if (intervalId) clearInterval(intervalId);
         });
-
     </script>
 </body>
 </html>
