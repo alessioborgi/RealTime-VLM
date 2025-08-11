@@ -1,12 +1,15 @@
 # RealTime‑VLM
 
-> A sleek, browser‑based webcam client that streams frames + instructions to an **OpenAI‑compatible** API and renders live responses. Works with local or remote **Vision‑Language Models (VLMs)** — pick one from `/v1/models`, send `/v1/chat/completions`, and go.
-
-![hero](https://img.shields.io/badge/Type-Frontend%20Web-brightgreen) ![api](https://img.shields.io/badge/API-OpenAI%20Chat%20Completions-blue) ![license](https://img.shields.io/badge/License-CC BY 4.0-lightgrey)
+**RealTime-VLM** brings real-time VLM inference to the browser. It continuously captures webcam frames, sends image+text to an OpenAI-compatible API, and displays responses with sub-second latency. Works with local or hosted VLMs; auto-discovers models from */v1/models* and uses */v1/chat/completions* for inference.
 
 ---
 
 ## ✨ Highlights
+
+<p align="center">
+  <img src="img/RealTime-VLM_interface.png" alt="RealTime-VLM Interface" width="100%">
+</p>
+
 
 - **Drop‑in UI**: modern glass style, dark mode, keyboard toggle (Space), request log, copy/clear, status badges, FPS.
 - **Camera controls**: pick device, resolution (480p/720p/1080p/auto), and JPEG quality.
@@ -20,28 +23,14 @@
 ---
 
 ## 🧩 Architecture
+<p align="center">
+  <picture>
+    <img src="img/RealTime-VLM-architecture.svg" alt="RealTime-VLM Architecture" width="100%">
+  </picture>
+</p>
 
-```mermaid
-flowchart LR
-  subgraph Browser
-    V["<video> webcam"] --> C["<canvas> encode JPEG"]
-    IN["Instruction text"] --> P
-    C --> P["Payload: { messages: [{ type: 'text', text }, { type: 'image_url', image_url }], model, max_tokens, temperature }"]
-    P -->|HTTP POST| API(("OpenAI-compatible API"))
-    API --> R["Text response"]
-    R --> UI["UI: Response + Log + Badges"]
-  end
-
-  subgraph Inference_Server
-    API --> ROUTE["/v1/chat/completions"]
-    API --> MODELS["/v1/models"]
-    ROUTE --> VLM["Vision-Language Model"]
-  end
-```
 
 ---
-
-
 ## 🚀 Quick start (1‑minute, llama.cpp)
 
 1) **Start a real‑time VLM server** (example: SmolVLM via `llama.cpp`):
@@ -201,7 +190,7 @@ RealTime‑VLM works with any **vision** model reachable behind an **OpenAI‑co
 
 ## 📝 License
 
-CC BY 4.0 — do whatever you want, just don’t remove attribution and be kind.
+MIT — do whatever you want, just don’t remove attribution and be kind.
 
 ---
 
