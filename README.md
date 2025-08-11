@@ -1,70 +1,219 @@
-# Getting Started with Create React App
+# RealTime‑VLM
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> A sleek, browser‑based webcam client that streams frames + instructions to an **OpenAI‑compatible** API and renders live responses. Works with local or remote **Vision‑Language Models (VLMs)** — pick one from `/v1/models`, send `/v1/chat/completions`, and go.
 
-## Available Scripts
+![hero](https://img.shields.io/badge/Type-Frontend%20Web-brightgreen) ![api](https://img.shields.io/badge/API-OpenAI%20Chat%20Completions-blue) ![license](https://img.shields.io/badge/License-MIT-lightgrey)
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## ✨ Highlights
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Drop‑in UI**: modern glass style, dark mode, keyboard toggle (Space), request log, copy/clear, status badges, FPS.
+- **Camera controls**: pick device, resolution (480p/720p/1080p/auto), and JPEG quality.
+- **API controls**: base URL, **model selector** (auto‑fetch from `/v1/models`), custom model ID, interval, max tokens, temperature, overlay/autoscroll, “Test API” button.
+- **One‑shot or live**: `Send once` or stream frames on an interval.
+- **Zero build**: static files (`index.html`, `styles.css`, `app.js`) — host anywhere that serves HTTPS or use `localhost`.
+- **Standards‑friendly**: uses `getUserMedia`, `canvas.toDataURL`, and OpenAI‑compatible **Chat Completions** with image content.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+> Inspired by **smolvlm‑realtime‑webcam** (llama.cpp + SmolVLM demo), but extended with a richer UX, model picker, and advanced options.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🧩 Architecture
 
-### `npm run build`
+```mermaid
+flowchart LR
+    subgraph Browser
+      V[<video> webcam] --> C[<canvas> encode JPEG]
+      IN[Instruction text] --> P
+      C --> P[Payload: {messages: [{text, image_url}], model, max_tokens, temperature}]
+      P -->|HTTP POST| API[(OpenAI‑compatible API)]
+      API --> R[Text response]
+      R --> UI[UI: Response + Log + Badges]
+    end
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    subgraph Inference Server
+      API --> ROUTE[/ /v1/chat/completions /]
+      API --> MODELS[/ /v1/models /]
+      ROUTE --> VLM[(Vision‑Language Model)]
+    end
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🚀 Quick start
 
-### `npm run eject`
+1) **Serve the files** (HTTPS or `localhost` is required for the camera).
+```bash
+# Option A: Python
+python3 -m http.server 8081
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# Option B: Node
+npx http-server -p 8081
+```
+Then open: http://localhost:8081
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2) **Run a compatible API** (pick one):
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **llama.cpp (OpenAI‑compatible server) + SmolVLM**
+```bash
+# Example: SmolVLM 500M (GGUF) via llama.cpp server
+llama-server -hf ggml-org/SmolVLM-500M-Instruct-GGUF  # add -ngl 99 for GPU
+```
+Set **Base API** to `http://localhost:8080` (or your port), click **Test API**, choose a **Model**.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **vLLM (OpenAI‑compatible server)**
+```bash
+# Start a server on localhost:8000 serving a Hugging Face model
+vllm serve mistralai/Pixtral-12B-2409 --host 0.0.0.0 --port 8000
+```
+Set **Base API** to `http://localhost:8000`, click **Test API**, pick a model.
 
-## Learn More
+- **Ollama (OpenAI‑compatible endpoint)**
+```bash
+# Ensure OpenAI compatibility is enabled (Ollama exposes /v1/... on 11434)
+# Pull a multimodal model (examples vary by community support)
+ollama run llama3.2-vision   # or: pixtral, llava, qwen2-vl, etc.
+```
+Set **Base API** to `http://localhost:11434/v1`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+> You can also point to OpenRouter or your own gateway as long as it exposes OpenAI‑style `/v1` endpoints.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3) **Use the UI**  
+- Select **Camera**, **Resolution**, **Quality**.  
+- Enter **Instruction** (or click a preset).  
+- Choose **Model** from `/v1/models` (or “Custom…” and type an ID).  
+- Click **Start** (Space toggles). Watch responses update live.
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## ✅ API contract (what the app expects)
 
-### Analyzing the Bundle Size
+- **List models**: `GET /v1/models` → returns `{ data: [{ id: "..." }, ...] }` (or `["id", ...]` is also accepted).
+- **Chat completions**: `POST /v1/chat/completions` with **image_url** input, e.g.:
+```jsonc
+{
+  "model": "your-vision-model-id",
+  "max_tokens": 100,
+  "temperature": 0.2,
+  "messages": [
+    { "role": "user", "content": [
+      { "type": "text", "text": "What do you see?" },
+      { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,..." } }
+    ]}
+  ]
+}
+```
+- The app reads the text at `choices[0].message.content` in the response.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+If your server uses a slightly different schema, adapt `app.js` in `sendChatCompletionRequest(...)`.
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 🧠 Supported models (examples)
 
-### Advanced Configuration
+RealTime‑VLM works with any **vision** model reachable behind an **OpenAI‑compatible** chat endpoint. Popular choices:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Local / Open‑weights
+- **SmolVLM‑500M Instruct (GGUF)** via llama.cpp — tiny & fast for demos.
+- **LLaVA / LLaVA‑NeXT** (Llama‑3 / Qwen‑1.5 backbones) — strong general VLM baselines.
+- **Llama 3.2‑Vision (11B / 90B)** — robust open vision models from Meta.
+- **Phi‑3.5‑Vision‑Instruct** — lightweight multimodal model from Microsoft.
+- **Pixtral‑12B** — Mistral’s multimodal 12B with strong doc understanding.
+- **Qwen‑VL / Qwen2‑VL / Qwen2.5‑VL (3B/7B/32B/72B)** — high‑quality VLM family with video‑length support in newer versions.
+- **Molmo (1B/7B/72B)** — Ai2’s open multimodal models, competitive at their sizes.
 
-### Deployment
+> Availability and exact IDs vary by distribution (HF, ModelScope, Ollama, vLLM, llama.cpp). Use the **Model** dropdown (fetches `/v1/models`) or enter a **Custom** ID.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Hosted APIs (examples)
+- **OpenRouter**, **vLLM**/**TGI** gateways, or vendor endpoints that expose **OpenAI‑style** `/v1` endpoints with image support.
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🛠️ Configuration tips
+
+- **Interval**: start at **500 ms**. If your model is fast (GPU/quantized), try **250 ms**.  
+- **Resolution**: higher = clearer content, but more bandwidth & latency.  
+- **JPEG quality**: 0.75–0.85 is a good trade‑off.  
+- **Max tokens**: limit to reduce latency.  
+- **Temperature**: keep **0.0–0.4** for crisp, factual outputs.  
+- **Instruction**: steer the model (e.g., *“Return JSON with detected objects and bounding boxes.”*).
+
+---
+
+## 🔒 Privacy & security
+
+- Camera frames are encoded **in the browser** and sent only to the API you configure.  
+- Use **HTTPS** (or `localhost`) so `getUserMedia` works.  
+- If self‑hosting the API, enable **CORS** for your origin and prefer **HTTP/2 + TLS**.  
+- Avoid sending sensitive live video to untrusted endpoints.
+
+---
+
+## 🧪 Troubleshooting
+
+- **Camera blocked**: Must be on **HTTPS** or `localhost`. Check browser permissions.  
+- **CORS failures**: Configure your server to allow your origin and the `Content-Type` header.  
+- **No models in dropdown**: Your server must implement `GET /v1/models`.  
+- **No response**: Ensure your model **supports images** and the **Chat Completions** schema.  
+- **Latency too high**: Lower resolution/quality, increase interval, or use GPU/quantized weights.
+
+---
+
+## 📦 Project structure
+
+```
+.
+├─ index.html    # UI skeleton & layout
+├─ styles.css    # Aesthetic (glass) styling + dark theme
+├─ app.js        # Camera, API calls, model fetch, UX logic
+└─ README.md
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Streaming responses (SSE / `stream: true`)  
+- [ ] Multi‑frame batching  
+- [ ] Bounding‑box overlays for detector‑style prompts  
+- [ ] JSON schema validation helpers  
+- [ ] Minimal Node proxy with secure CORS presets
+
+---
+
+## 📚 References & model hubs (a few starting points)
+
+- **smolvlm‑realtime‑webcam** (original demo) — llama.cpp + SmolVLM 500M  
+  - https://github.com/ngxson/smolvlm-realtime-webcam
+- **OpenAI model docs** (GPT‑4o & model catalog)  
+  - https://platform.openai.com/docs/models
+- **vLLM** — OpenAI‑compatible server mode  
+  - https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+- **Ollama** — OpenAI‑compatible endpoint  
+  - https://ollama.com/blog/openai-compatibility
+- **LLaVA / LLaVA‑NeXT**  
+  - https://github.com/haotian-liu/LLaVA
+- **Llama 3.2 Vision** (Meta)  
+  - https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/
+- **Phi‑3.5‑Vision** (Microsoft)  
+  - https://huggingface.co/microsoft/Phi-3.5-vision-instruct
+- **Pixtral‑12B** (Mistral)  
+  - https://mistral.ai/news/pixtral-12b
+- **Qwen2‑VL / Qwen2.5‑VL**  
+  - https://qwenlm.github.io/blog/qwen2-vl/  
+  - https://qwenlm.github.io/blog/qwen2.5-vl/
+- **Molmo** (Ai2)  
+  - https://allenai.org/blog/molmo
+
+---
+
+## 📝 License
+
+MIT — do whatever you want, just don’t remove attribution and be kind.
+
+---
+
+## ❤️ Acknowledgements
+
+Thanks to the authors and communities behind **llama.cpp**, **vLLM**, **Ollama**, **LLaVA**, **Meta Llama**, **Microsoft Phi**, **Qwen**, **Mistral**, and **Ai2 Molmo** for pushing open and accessible multimodal research forward.
