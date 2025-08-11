@@ -8,6 +8,11 @@
 
 ## ✨ Highlights
 
+<p align="center">
+  <img src="img/RealTime-VLM_interface.png" alt="RealTime-VLM Interface" width="100%">
+</p>
+
+
 - **Drop‑in UI**: modern glass style, dark mode, keyboard toggle (Space), request log, copy/clear, status badges, FPS.
 - **Camera controls**: pick device, resolution (480p/720p/1080p/auto), and JPEG quality.
 - **API controls**: base URL, **model selector** (auto‑fetch from `/v1/models`), custom model ID, interval, max tokens, temperature, overlay/autoscroll, “Test API” button.
@@ -20,24 +25,14 @@
 ---
 
 ## 🧩 Architecture
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="img/RealTime-VLM-architecture.svg">
+    <source media="(prefers-color-scheme: light)" srcset="img/RealTime-VLM-architecture-light.svg">
+    <img src="img/RealTime-VLM-architecture.svg" alt="RealTime-VLM Architecture" width="100%">
+  </picture>
+</p>
 
-```mermaid
-flowchart LR
-  subgraph Browser
-    V["<video> webcam"] --> C["<canvas> encode JPEG"]
-    IN["Instruction text"] --> P
-    C --> P["Payload: { messages: [{ type: 'text', text }, { type: 'image_url', image_url }], model, max_tokens, temperature }"]
-    P -->|HTTP POST| API(("OpenAI-compatible API"))
-    API --> R["Text response"]
-    R --> UI["UI: Response + Log + Badges"]
-  end
-
-  subgraph Inference_Server
-    API --> ROUTE["/v1/chat/completions"]
-    API --> MODELS["/v1/models"]
-    ROUTE --> VLM["Vision-Language Model"]
-  end
-```
 
 ---
 
