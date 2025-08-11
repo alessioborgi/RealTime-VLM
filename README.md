@@ -25,8 +25,6 @@
 ## 🧩 Architecture
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="img/RealTime-VLM-architecture.svg">
-    <source media="(prefers-color-scheme: light)" srcset="img/RealTime-VLM-architecture-light.svg">
     <img src="img/RealTime-VLM-architecture.svg" alt="RealTime-VLM Architecture" width="100%">
   </picture>
 </p>
