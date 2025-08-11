@@ -1,8 +1,6 @@
 # RealTime‑VLM
 
-> A sleek, browser‑based webcam client that streams frames + instructions to an **OpenAI‑compatible** API and renders live responses. Works with local or remote **Vision‑Language Models (VLMs)** — pick one from `/v1/models`, send `/v1/chat/completions`, and go.
-
-![hero](https://img.shields.io/badge/Type-Frontend%20Web-brightgreen) ![api](https://img.shields.io/badge/API-OpenAI%20Chat%20Completions-blue) ![license](https://img.shields.io/badge/License-MIT-lightgrey)
+**RealTime-VLM** brings real-time VLM inference to the browser. It continuously captures webcam frames, sends image+text to an OpenAI-compatible API, and displays responses with sub-second latency. Works with local or hosted VLMs; auto-discovers models from */v1/models* and uses */v1/chat/completions* for inference.
 
 ---
 
