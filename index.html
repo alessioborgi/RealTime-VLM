@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Camera Interaction App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="container header">
+    <div class="brand">
+      <div class="logo">🎥</div>
+      <div class="titles">
+        <h1>Camera Interaction</h1>
+        <p class="subtitle">Send live frames + instructions to your API and see the response</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="themeToggle" class="btn ghost" aria-label="Toggle theme">🌓</button>
+      <a class="btn link" href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia" target="_blank" rel="noreferrer">Help</a>
+    </div>
+  </header>
+
+  <main class="container grid">
+    <section class="card media">
+      <div class="media-top">
+        <div class="media-controls">
+          <label class="field">
+            <span>Camera</span>
+            <select id="cameraSelect"></select>
+          </label>
+          <label class="field">
+            <span>Resolution</span>
+            <select id="resolutionSelect">
+              <option value="default" selected>Auto</option>
+              <option value="1280x720">1280 × 720</option>
+              <option value="1920x1080">1920 × 1080</option>
+              <option value="640x480">640 × 480</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>JPEG Quality</span>
+            <input id="qualityRange" type="range" min="0.5" max="0.95" step="0.05" value="0.8" />
+          </label>
+        </div>
+        <div class="status-row">
+          <span id="cameraStatus" class="badge">Idle</span>
+          <span id="apiStatus" class="badge muted">API: Unknown</span>
+          <span id="fps" class="badge muted">FPS: –</span>
+        </div>
+      </div>
+
+      <div class="media-stage">
+        <video id="videoFeed" autoplay playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <div id="overlay" class="overlay hidden">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Sending...</p>
+        </div>
+      </div>
+
+      <div class="media-actions">
+        <button id="startButton" class="btn primary">Start</button>
+        <button id="captureOnce" class="btn" title="Send a single frame">Send once</button>
+        <button id="snapshotBtn" class="btn ghost" title="Save current frame">Save frame</button>
+      </div>
+    </section>
+
+    <section class="card io">
+      <div class="io-grid">
+        <label class="field">
+          <span>Base API</span>
+          <input id="baseURL" type="url" placeholder="http://localhost:8080" value="http://localhost:8080" />
+        </label>
+
+        <div class="row">
+          <label class="field grow">
+            <span>Instruction</span>
+            <textarea id="instructionText" rows="3" placeholder="What do you see?"></textarea>
+          </label>
+          <div class="presets">
+            <button class="chip" data-preset="Describe the scene in one sentence.">Describe</button>
+            <button class="chip" data-preset="Detect people, objects, and their positions.">Detect</button>
+            <button class="chip" data-preset="Is this a valid document? Return a score 0–1.">Score</button>
+          </div>
+        </div>
+
+        <div class="advanced">
+          <button id="advancedToggle" class="btn ghost small" aria-expanded="false">Advanced ▼</button>
+          <div id="advancedPanel" class="advanced-panel hidden">
+            <div class="row">
+              <label class="field">
+                <span>Interval</span>
+                <select id="intervalSelect">
+                  <option value="100">100ms</option>
+                  <option value="250">250ms</option>
+                  <option value="500" selected>500ms</option>
+                  <option value="1000">1s</option>
+                  <option value="2000">2s</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Max tokens</span>
+                <input id="maxTokens" type="number" value="100" min="1" max="2048" />
+              </label>
+              <label class="field">
+                <span>Temperature</span>
+                <input id="temperature" type="number" value="0.2" min="0" max="2" step="0.1" />
+              </label>
+            </div>
+            <div class="row">
+              <button id="testAPI" class="btn">Test API</button>
+              <label class="switch">
+                <input id="showOverlay" type="checkbox" checked />
+                <span>Show sending overlay</span>
+              </label>
+              <label class="switch">
+                <input id="autoScroll" type="checkbox" checked />
+                <span>Autoscroll responses</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Response</span>
+          <textarea id="responseText" rows="6" readonly placeholder="Server response will appear here..." aria-live="polite"></textarea>
+        </label>
+
+        <div class="io-actions">
+          <button id="copyBtn" class="btn ghost">Copy response</button>
+          <button id="clearBtn" class="btn ghost">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card log">
+      <div class="log-header">
+        <h2>Requests Log</h2>
+        <button id="clearLog" class="btn ghost small">Clear log</button>
+      </div>
+      <ul id="logList" class="log-list"></ul>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <p>Works best over HTTPS or <code>localhost</code>. Use <kbd>Space</kbd> to Start/Stop.</p>
+  </footer>
+
+  <template id="logItemTemplate">
+    <li class="log-item">
+      <span class="time"></span>
+      <span class="summary"></span>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
