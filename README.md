@@ -23,20 +23,20 @@
 
 ```mermaid
 flowchart LR
-    subgraph Browser
-      V[<video> webcam] --> C[<canvas> encode JPEG]
-      IN[Instruction text] --> P
-      C --> P[Payload: {messages: [{text, image_url}], model, max_tokens, temperature}]
-      P -->|HTTP POST| API[(OpenAI‑compatible API)]
-      API --> R[Text response]
-      R --> UI[UI: Response + Log + Badges]
-    end
+  subgraph Browser
+    V["<video> webcam"] --> C["<canvas> encode JPEG"]
+    IN["Instruction text"] --> P
+    C --> P["Payload: { messages: [{ type: 'text', text }, { type: 'image_url', image_url }], model, max_tokens, temperature }"]
+    P -->|HTTP POST| API(("OpenAI-compatible API"))
+    API --> R["Text response"]
+    R --> UI["UI: Response + Log + Badges"]
+  end
 
-    subgraph Inference Server
-      API --> ROUTE[/ /v1/chat/completions /]
-      API --> MODELS[/ /v1/models /]
-      ROUTE --> VLM[(Vision‑Language Model)]
-    end
+  subgraph Inference_Server
+    API --> ROUTE["/v1/chat/completions"]
+    API --> MODELS["/v1/models"]
+    ROUTE --> VLM["Vision-Language Model"]
+  end
 ```
 
 ---
