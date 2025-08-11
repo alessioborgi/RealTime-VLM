@@ -1,15 +1,12 @@
 # RealTime‑VLM
 
-**RealTime-VLM** brings real-time VLM inference to the browser. It continuously captures webcam frames, sends image+text to an OpenAI-compatible API, and displays responses with sub-second latency. Works with local or hosted VLMs; auto-discovers models from */v1/models* and uses */v1/chat/completions* for inference.
+> A sleek, browser‑based webcam client that streams frames + instructions to an **OpenAI‑compatible** API and renders live responses. Works with local or remote **Vision‑Language Models (VLMs)** — pick one from `/v1/models`, send `/v1/chat/completions`, and go.
+
+![hero](https://img.shields.io/badge/Type-Frontend%20Web-brightgreen) ![api](https://img.shields.io/badge/API-OpenAI%20Chat%20Completions-blue) ![license](https://img.shields.io/badge/License-CC BY 4.0-lightgrey)
 
 ---
 
 ## ✨ Highlights
-
-<p align="center">
-  <img src="img/RealTime-VLM_interface.png" alt="RealTime-VLM Interface" width="100%">
-</p>
-
 
 - **Drop‑in UI**: modern glass style, dark mode, keyboard toggle (Space), request log, copy/clear, status badges, FPS.
 - **Camera controls**: pick device, resolution (480p/720p/1080p/auto), and JPEG quality.
@@ -23,60 +20,63 @@
 ---
 
 ## 🧩 Architecture
-<p align="center">
-  <picture>
-    <img src="img/RealTime-VLM-architecture.svg" alt="RealTime-VLM Architecture" width="100%">
-  </picture>
-</p>
 
+```mermaid
+flowchart LR
+  subgraph Browser
+    V["<video> webcam"] --> C["<canvas> encode JPEG"]
+    IN["Instruction text"] --> P
+    C --> P["Payload: { messages: [{ type: 'text', text }, { type: 'image_url', image_url }], model, max_tokens, temperature }"]
+    P -->|HTTP POST| API(("OpenAI-compatible API"))
+    API --> R["Text response"]
+    R --> UI["UI: Response + Log + Badges"]
+  end
+
+  subgraph Inference_Server
+    API --> ROUTE["/v1/chat/completions"]
+    API --> MODELS["/v1/models"]
+    ROUTE --> VLM["Vision-Language Model"]
+  end
+```
 
 ---
 
-## 🚀 Quick start
 
-1) **Serve the files** (HTTPS or `localhost` is required for the camera).
+## 🚀 Quick start (1‑minute, llama.cpp)
+
+1) **Start a real‑time VLM server** (example: SmolVLM via `llama.cpp`):
 ```bash
-# Option A: Python
-python3 -m http.server 8081
-
-# Option B: Node
-npx http-server -p 8081
+# Fast local VLM (GPU optional with -ngl 99)
+llama-server -hf ggml-org/SmolVLM-500M-Instruct-GGUF  # default port: 8080
 ```
-Then open: http://localhost:8081
 
-2) **Run a compatible API** (pick one):
-
-- **llama.cpp (OpenAI‑compatible server) + SmolVLM**
+2) **Open the UI**  
+- Easiest: just open `index.html` in your browser.  
+- If your browser blocks the camera on `file://`, serve the folder locally:
 ```bash
-# Example: SmolVLM 500M (GGUF) via llama.cpp server
-llama-server -hf ggml-org/SmolVLM-500M-Instruct-GGUF  # add -ngl 99 for GPU
+python3 -m http.server 8081    # then open http://localhost:8081
 ```
-Set **Base API** to `http://localhost:8080` (or your port), click **Test API**, choose a **Model**.
 
-- **vLLM (OpenAI‑compatible server)**
+3) **Use the app**  
+- Base API defaults to `http://localhost:8080` (change if needed).  
+- Click **Test API**, pick a **Model** from `/v1/models` (or choose **Custom…**).  
+- Hit **Start** (or **Send once**) and watch responses stream back in real time.
+
+---
+
+### Other backends (optional)
+
+- **vLLM (OpenAI‑compatible)**
 ```bash
-# Start a server on localhost:8000 serving a Hugging Face model
 vllm serve mistralai/Pixtral-12B-2409 --host 0.0.0.0 --port 8000
+# Base API: http://localhost:8000
 ```
-Set **Base API** to `http://localhost:8000`, click **Test API**, pick a model.
-
-- **Ollama (OpenAI‑compatible endpoint)**
+- **Ollama (OpenAI‑compatible)**
 ```bash
-# Ensure OpenAI compatibility is enabled (Ollama exposes /v1/... on 11434)
-# Pull a multimodal model (examples vary by community support)
-ollama run llama3.2-vision   # or: pixtral, llava, qwen2-vl, etc.
+# Example models vary by support: llama3.2-vision, pixtral, llava, qwen2-vl, etc.
+ollama run llama3.2-vision
+# Base API: http://localhost:11434/v1
 ```
-Set **Base API** to `http://localhost:11434/v1`.
-
-> You can also point to OpenRouter or your own gateway as long as it exposes OpenAI‑style `/v1` endpoints.
-
-3) **Use the UI**  
-- Select **Camera**, **Resolution**, **Quality**.  
-- Enter **Instruction** (or click a preset).  
-- Choose **Model** from `/v1/models` (or “Custom…” and type an ID).  
-- Click **Start** (Space toggles). Watch responses update live.
-
----
 
 ## ✅ API contract (what the app expects)
 
@@ -201,7 +201,7 @@ RealTime‑VLM works with any **vision** model reachable behind an **OpenAI‑co
 
 ## 📝 License
 
-MIT — do whatever you want, just don’t remove attribution and be kind.
+CC BY 4.0 — do whatever you want, just don’t remove attribution and be kind.
 
 ---
 
