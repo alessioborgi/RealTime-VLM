@@ -29,6 +29,10 @@
     logList: document.getElementById('logList'),
     logItemTemplate: document.getElementById('logItemTemplate'),
     themeToggle: document.getElementById('themeToggle'),
+    modelSelect: document.getElementById('modelSelect'),
+    refreshModels: document.getElementById('refreshModels'),
+    customModelField: document.getElementById('customModelField'),
+    customModel: document.getElementById('customModel'),
   };
 
   const state = {
@@ -64,6 +68,57 @@
     els.advancedToggle.setAttribute('aria-expanded', expanded);
     els.advancedToggle.textContent = expanded === 'true' ? 'Advanced ▲' : 'Advanced ▼';
   });
+
+  
+  // Models
+  async function fetchModels(){
+    const base = (els.baseURL.value || '').replace(/\/$/, '');
+    if(!base){ addLog('Set Base API first.'); return; }
+    const url = base + '/v1/models';
+    setBadge(els.apiStatus, 'warn', 'API: Fetching models…');
+    try{
+      const res = await fetch(url, { method:'GET' });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data
+                 : Array.isArray(data?.data) ? data.data
+                 : Array.isArray(data?.models) ? data.models
+                 : [];
+      const ids = list.map(m => (typeof m === 'string' ? m : (m.id || m.name || m.model))).filter(Boolean);
+      els.modelSelect.innerHTML = '';
+      if(ids.length === 0){
+        els.modelSelect.innerHTML = '<option value="">(no models found)</option>';
+        setBadge(els.apiStatus, 'warn', 'API: No models');
+        return;
+      }
+      ids.forEach((id, i) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        els.modelSelect.appendChild(opt);
+      });
+      const customOpt = document.createElement('option');
+      customOpt.value = '__custom__';
+      customOpt.textContent = 'Custom…';
+      els.modelSelect.appendChild(customOpt);
+
+      els.modelSelect.value = ids[0];
+      setBadge(els.apiStatus, 'ok', `API: ${ids.length} models`);
+      addLog(`Fetched ${ids.length} models`);
+    }catch(err){
+      console.warn('fetchModels failed', err);
+      setBadge(els.apiStatus, 'err', 'API: Models error');
+      addLog('Models fetch error: ' + err.message);
+    }
+  }
+
+  function currentModelId(){
+    const v = els.modelSelect.value || '';
+    if(v === '__custom__'){
+      return (els.customModel.value || '').trim();
+    }
+    return v.trim();
+  }
 
   // Presets
   document.querySelectorAll('.chip').forEach(chip => {
@@ -141,7 +196,9 @@
 
   async function sendChatCompletionRequest(instruction, imageBase64URL){
     const url = (els.baseURL.value || '').replace(/\/$/, '') + '/v1/chat/completions';
+    const modelId = currentModelId();
     const payload = {
+      ...(modelId ? { model: modelId } : {}),
       max_tokens: Math.max(1, parseInt(els.maxTokens.value, 10) || 100),
       temperature: Math.max(0, Math.min(2, parseFloat(els.temperature.value) || 0.2)),
       messages: [
@@ -273,7 +330,9 @@
     try{
       setBadge(els.apiStatus, 'warn', 'API: Testing...');
       const url = (els.baseURL.value || '').replace(/\/$/, '') + '/v1/chat/completions';
-      const payload = {
+      const modelId = currentModelId();
+    const payload = {
+      ...(modelId ? { model: modelId } : {}),
         max_tokens: 5,
         messages: [{ role:'user', content: [{ type:'text', text:'ping'}]}]
       };
@@ -285,6 +344,7 @@
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       setBadge(els.apiStatus, 'ok', 'API: OK');
       addLog('API test OK');
+      await fetchModels();
     }catch(err){
       setBadge(els.apiStatus, 'err', 'API: Error');
       addLog('API test failed: ' + err.message);
@@ -310,6 +370,14 @@
   });
   els.clearBtn.addEventListener('click', () => setResponse(''));
   els.clearLog.addEventListener('click', () => els.logList.innerHTML = '');
+  // Model UI events
+  els.modelSelect.addEventListener('change', () => {
+    const isCustom = els.modelSelect.value === '__custom__';
+    els.customModelField.classList.toggle('hidden', !isCustom);
+  });
+  els.refreshModels.addEventListener('click', fetchModels);
+  els.baseURL.addEventListener('change', () => { fetchModels(); });
+
 
   // Keyboard: space to toggle
   window.addEventListener('keydown', (e) => {
@@ -327,6 +395,7 @@
     }
     await listCameras();
     await initCamera();
+    await fetchModels();
     // refresh labels when permission granted
     navigator.mediaDevices.addEventListener?.('devicechange', listCameras);
   });

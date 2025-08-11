@@ -160,3 +160,8 @@ kbd{
   .grid{ grid-template-columns: 1fr; }
   .media{ grid-row: auto; }
 }
+
+
+/* Combo (select + button inline) */
+.combo{ display:flex; gap:8px; align-items:center; }
+.combo select{ flex:1 1 auto; }

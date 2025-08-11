@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Camera Interaction App</title>
+  <title>RealTime-VLM</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
     <div class="brand">
       <div class="logo">🎥</div>
       <div class="titles">
-        <h1>Camera Interaction</h1>
+        <h1>RealTime-VLM</h1>
         <p class="subtitle">Send live frames + instructions to your API and see the response</p>
       </div>
     </div>
@@ -75,6 +75,18 @@
         <label class="field">
           <span>Base API</span>
           <input id="baseURL" type="url" placeholder="http://localhost:8080" value="http://localhost:8080" />
+        </label>
+
+        <label class="field">
+          <span>Model</span>
+          <div class="combo">
+            <select id="modelSelect"><option value="">(fetch models)</option></select>
+            <button id="refreshModels" class="btn ghost small" title="Refresh models">↻</button>
+          </div>
+        </label>
+        <label class="field hidden" id="customModelField">
+          <span>Custom model ID</span>
+          <input id="customModel" type="text" placeholder="Enter model id…" />
         </label>
 
         <div class="row">
