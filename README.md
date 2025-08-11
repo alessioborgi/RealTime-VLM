@@ -152,16 +152,6 @@ RealTime‑VLM works with any **vision** model reachable behind an **OpenAI‑co
 
 ---
 
-## 🗺️ Roadmap
-
-- [ ] Streaming responses (SSE / `stream: true`)  
-- [ ] Multi‑frame batching  
-- [ ] Bounding‑box overlays for detector‑style prompts  
-- [ ] JSON schema validation helpers  
-- [ ] Minimal Node proxy with secure CORS presets
-
----
-
 ## 📚 References & model hubs (a few starting points)
 
 - **smolvlm‑realtime‑webcam** (original demo) — llama.cpp + SmolVLM 500M  
@@ -188,12 +178,3 @@ RealTime‑VLM works with any **vision** model reachable behind an **OpenAI‑co
 
 ---
 
-## 📝 License
-
-MIT — do whatever you want, just don’t remove attribution and be kind.
-
----
-
-## ❤️ Acknowledgements
-
-Thanks to the authors and communities behind **llama.cpp**, **vLLM**, **Ollama**, **LLaVA**, **Meta Llama**, **Microsoft Phi**, **Qwen**, **Mistral**, and **Ai2 Molmo** for pushing open and accessible multimodal research forward.
